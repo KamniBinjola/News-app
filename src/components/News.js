@@ -5,13 +5,11 @@ import PropTypes from "prop-types";
 
 export default class News extends Component {
   static defaultProps = {
-    country: "us",
     pageSize: 6,
     category: "general",
   };
 
   static propTypes = {
-    country: PropTypes.string,
     pageSize: PropTypes.number,
     category: PropTypes.string,
   };
@@ -26,44 +24,47 @@ export default class News extends Component {
     };
   }
 
-  async componentDidMount() {
+  componentDidMount() {
     this.fetchNews();
   }
 
+  // 🔥 Category-wise Indian news (WORKS on free plan)
   fetchNews = async () => {
-    const apiKey = "81a2d2d5e54056bddeb502b4fba67582"; // your mediastack key
-    // Use https and include sort to reliably get results
-    const url = `https://api.mediastack.com/v1/news?access_key=${apiKey}&categories=${this.props.category}&limit=${this.props.pageSize}&offset=${(this.state.page - 1) * this.props.pageSize}&sort=published_desc`;
+    const apiKey = "81a2d2d5e54056bddeb502b4fba67582";
+
+    // category wise indian news keywords
+    const keywordMap = {
+      general: "India",
+      business: "India business",
+      entertainment: "India entertainment",
+      health: "India health",
+      science: "India science",
+      sports: "India sports",
+      technology: "India technology",
+    };
+
+    const categoryKeyword = keywordMap[this.props.category] || "India";
+
+    let url = `http://api.mediastack.com/v1/news?access_key=${apiKey}&keywords=${categoryKeyword}&languages=en&limit=${this.props.pageSize}&offset=${(this.state.page - 1) * this.props.pageSize}`;
 
     this.setState({ loading: true });
 
-    try {
-      const res = await fetch(url);
-      const parsedData = await res.json();
+    let data = await fetch(url);
+    let parsedData = await data.json();
 
-      // parsedData.data is array of articles, parsedData.pagination may hold total
-      this.setState({
-        articles: parsedData.data || [],
-        totalResults: parsedData.pagination ? parsedData.pagination.total : (parsedData.data ? parsedData.data.length : 0),
-        loading: false,
-      });
-    } catch (error) {
-      // safe fallback on network/API error
-      console.error("Fetch error:", error);
-      this.setState({ articles: [], totalResults: 0, loading: false });
-    }
+    this.setState({
+      articles: parsedData.data || [],
+      totalResults: parsedData.pagination ? parsedData.pagination.total : 0,
+      loading: false,
+    });
   };
 
   handlePrevClick = async () => {
-    if (this.state.page <= 1) return;
     await this.setState({ page: this.state.page - 1 });
     this.fetchNews();
   };
 
   handleNextClick = async () => {
-    // If totalResults unknown (0), allow next once; otherwise check bound
-    const maxPage = this.state.totalResults ? Math.ceil(this.state.totalResults / this.props.pageSize) : Infinity;
-    if (this.state.page + 1 > maxPage) return;
     await this.setState({ page: this.state.page + 1 });
     this.fetchNews();
   };
@@ -71,16 +72,11 @@ export default class News extends Component {
   render() {
     return (
       <div className="container my-3">
-        {/* push content below fixed navbar */}
         <h2 className="text-center" style={{ marginTop: "70px" }}>
-          NewsGlider - Top Headlines ({this.props.category})
+          NewsGlider - India {this.props.category} News
         </h2>
 
         {this.state.loading && <Spinner />}
-
-        {!this.state.loading && this.state.articles.length === 0 && (
-          <p className="text-center">No news available right now.</p>
-        )}
 
         <div className="row">
           {!this.state.loading &&
@@ -89,7 +85,7 @@ export default class News extends Component {
                 <NewsItem
                   title={element.title ? element.title.slice(0, 45) : ""}
                   description={element.description ? element.description.slice(0, 88) : ""}
-                  imageUrl={element.image || element.thumbnail || ""}
+                  imageUrl={element.image}
                   newsUrl={element.url}
                 />
               </div>
@@ -106,7 +102,7 @@ export default class News extends Component {
           </button>
 
           <button
-            disabled={this.state.page * this.props.pageSize >= (this.state.totalResults || Infinity)}
+            disabled={this.state.page * this.props.pageSize >= this.state.totalResults}
             className="btn btn-dark"
             onClick={this.handleNextClick}
           >
