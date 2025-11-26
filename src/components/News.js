@@ -3,11 +3,10 @@ import NewsItem from "./NewsItem";
 import Spinner from "./Spinner";
 import PropTypes from "prop-types";
 
-
 export default class News extends Component {
   static defaultProps = {
     country: "us",
-    pageSize: 7,
+    pageSize: 6,
     category: "general",
   };
   static propTypes = {
@@ -17,10 +16,7 @@ export default class News extends Component {
   };
   articles = [
     {
-      source: {
-        id: "bbc-sport",
-        name: "BBC Sport",
-      },
+      source: { id: "bbc-sport", name: "BBC Sport" },
       author: null,
       title: "Ashton Agar remembers scoring 98 on Ashes debut as a teenager",
       description:
@@ -29,14 +25,10 @@ export default class News extends Component {
       urlToImage:
         "https://ichef.bbci.co.uk/ace/branded_sport/1200/cpsprodpb/435b/live/1ce1d290-c3d4-11f0-ae46-bd64331f0fd4.jpg",
       publishedAt: "2025-11-18T07:07:30.8818424Z",
-      content:
-        'Still, that second Test created another special moment.\r\n"The best part was meeting the Queen," says Agar. "Michael Clarke introduced her to everyone and we had to address her as \'your majesty\'.\r\n"Sh… [+1807 chars]',
+      content: 'Still, that second Test created another special moment. …',
     },
     {
-      source: {
-        id: "espn-cric-info",
-        name: "ESPN Cric Info",
-      },
+      source: { id: "espn-cric-info", name: "ESPN Cric Info" },
       author: null,
       title:
         "PCB hands Umar Akmal three-year ban from all cricket | ESPNcricinfo.com",
@@ -46,14 +38,10 @@ export default class News extends Component {
       urlToImage:
         "https://a4.espncdn.com/combiner/i?img=%2Fi%2Fcricket%2Fcricinfo%2F1099495_800x450.jpg",
       publishedAt: "2020-04-27T11:41:47Z",
-      content:
-        "Umar Akmal's troubled cricket career has hit its biggest roadblock yet, with the PCB handing him a ban from all representative cricket for three years after he pleaded guilty of failing to report det… [+1506 chars]",
+      content: "Umar Akmal's troubled cricket career has hit its biggest roadblock yet…",
     },
     {
-      source: {
-        id: "espn-cric-info",
-        name: "ESPN Cric Info",
-      },
+      source: { id: "espn-cric-info", name: "ESPN Cric Info" },
       author: null,
       title:
         "What we learned from watching the 1992 World Cup final in full again | ESPNcricinfo.com",
@@ -63,10 +51,10 @@ export default class News extends Component {
       urlToImage:
         "https://a4.espncdn.com/combiner/i?img=%2Fi%2Fcricket%2Fcricinfo%2F1219926_1296x729.jpg",
       publishedAt: "2020-03-30T15:26:05Z",
-      content:
-        "Last week, we at ESPNcricinfo did something we have been thinking of doing for eight years now: pretend-live ball-by-ball commentary for a classic cricket match. We knew the result, yes, but we tried… [+6823 chars]",
+      content: "Last week, we at ESPNcricinfo did something we have been thinking of doing…",
     },
   ];
+
   constructor() {
     super();
     this.state = {
@@ -78,11 +66,9 @@ export default class News extends Component {
 
   async componentDidMount() {
     this.props.setProgress(0);
-
     let url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=bed57056a70e41f2a6a73d8013cfb88a&page=${this.state.page}&pageSize=${this.props.pageSize}`;
     this.setState({ loading: true });
     let data = await fetch(url);
-
     let parsedData = await data.json();
     this.setState({
       articles: parsedData.articles,
@@ -97,7 +83,6 @@ export default class News extends Component {
     this.setState({ loading: true });
     let data = await fetch(url);
     let parsedData = await data.json();
-
     this.setState({
       page: this.state.page - 1,
       articles: parsedData.articles,
@@ -116,7 +101,6 @@ export default class News extends Component {
       this.setState({ loading: true });
       let data = await fetch(url);
       let parsedData = await data.json();
-
       this.setState({
         page: this.state.page + 1,
         articles: parsedData.articles,
