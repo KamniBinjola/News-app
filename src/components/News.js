@@ -31,40 +31,56 @@ export default class News extends Component {
   }
 
   fetchNews = async () => {
-    let url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&page=${this.state.page}&pageSize=${this.props.pageSize}&apiKey=bed57056a70e41f2a6a73d8013cfb88a`;
+    const apiKey = "81a2d2d5e54056bddeb502b4fba67582"; // your mediastack key
+    // Use https and include sort to reliably get results
+    const url = `https://api.mediastack.com/v1/news?access_key=${apiKey}&categories=${this.props.category}&limit=${this.props.pageSize}&offset=${(this.state.page - 1) * this.props.pageSize}&sort=published_desc`;
 
     this.setState({ loading: true });
 
-    let data = await fetch(url);
-    let parsedData = await data.json();
+    try {
+      const res = await fetch(url);
+      const parsedData = await res.json();
 
-    this.setState({
-      articles: parsedData.articles || [],
-      totalResults: parsedData.totalResults || 0,
-      loading: false,
-    });
+      // parsedData.data is array of articles, parsedData.pagination may hold total
+      this.setState({
+        articles: parsedData.data || [],
+        totalResults: parsedData.pagination ? parsedData.pagination.total : (parsedData.data ? parsedData.data.length : 0),
+        loading: false,
+      });
+    } catch (error) {
+      // safe fallback on network/API error
+      console.error("Fetch error:", error);
+      this.setState({ articles: [], totalResults: 0, loading: false });
+    }
   };
 
   handlePrevClick = async () => {
+    if (this.state.page <= 1) return;
     await this.setState({ page: this.state.page - 1 });
     this.fetchNews();
   };
 
   handleNextClick = async () => {
-    if (this.state.page + 1 <= Math.ceil(this.state.totalResults / this.props.pageSize)) {
-      await this.setState({ page: this.state.page + 1 });
-      this.fetchNews();
-    }
+    // If totalResults unknown (0), allow next once; otherwise check bound
+    const maxPage = this.state.totalResults ? Math.ceil(this.state.totalResults / this.props.pageSize) : Infinity;
+    if (this.state.page + 1 > maxPage) return;
+    await this.setState({ page: this.state.page + 1 });
+    this.fetchNews();
   };
 
   render() {
     return (
       <div className="container my-3">
-        <h2 className="text-center" style={{ marginTop: "90px" }}>
+        {/* push content below fixed navbar */}
+        <h2 className="text-center" style={{ marginTop: "70px" }}>
           NewsGlider - Top Headlines ({this.props.category})
         </h2>
 
         {this.state.loading && <Spinner />}
+
+        {!this.state.loading && this.state.articles.length === 0 && (
+          <p className="text-center">No news available right now.</p>
+        )}
 
         <div className="row">
           {!this.state.loading &&
@@ -73,7 +89,7 @@ export default class News extends Component {
                 <NewsItem
                   title={element.title ? element.title.slice(0, 45) : ""}
                   description={element.description ? element.description.slice(0, 88) : ""}
-                  imageUrl={element.urlToImage}
+                  imageUrl={element.image || element.thumbnail || ""}
                   newsUrl={element.url}
                 />
               </div>
@@ -90,7 +106,7 @@ export default class News extends Component {
           </button>
 
           <button
-            disabled={this.state.page + 1 > Math.ceil(this.state.totalResults / this.props.pageSize)}
+            disabled={this.state.page * this.props.pageSize >= (this.state.totalResults || Infinity)}
             className="btn btn-dark"
             onClick={this.handleNextClick}
           >
