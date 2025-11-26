@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 export default class News extends Component {
   static defaultProps = {
     pageSize: 6,
-    category: "general",
+    category: "all", // default Inshorts category
   };
 
   static propTypes = {
@@ -20,7 +20,6 @@ export default class News extends Component {
       articles: [],
       loading: false,
       page: 1,
-      totalResults: 0,
     };
   }
 
@@ -28,73 +27,87 @@ export default class News extends Component {
     this.fetchNews();
   }
 
-  // 🔥 Category-wise Indian news (WORKS on free plan)
   fetchNews = async () => {
-    const apiKey = "81a2d2d5e54056bddeb502b4fba67582";
+    // Map your category props to valid Inshorts categories
+    const validCategories = [
+      "all", "national", "business", "sports",
+      "world", "politics", "technology", "startup",
+      "entertainment", "miscellaneous", "hatke",
+      "science", "automobile"
+    ];
 
-    // category wise indian news keywords
-    const keywordMap = {
-      general: "India",
-      business: "India business",
-      entertainment: "India entertainment",
-      health: "India health",
-      science: "India science",
-      sports: "India sports",
-      technology: "India technology",
-    };
-
-    const categoryKeyword = keywordMap[this.props.category] || "India";
-
-    let url = `http://api.mediastack.com/v1/news?access_key=${apiKey}&keywords=${categoryKeyword}&languages=en&limit=${this.props.pageSize}&offset=${(this.state.page - 1) * this.props.pageSize}`;
+    const category = validCategories.includes(this.props.category)
+      ? this.props.category
+      : "all";
 
     this.setState({ loading: true });
 
-    let data = await fetch(url);
-    let parsedData = await data.json();
+    try {
+      const response = await fetch(
+        `https://inshortsapi.vercel.app/news?category=${category}`
+      );
+      const parsedData = await response.json();
+      const articles = parsedData.data || [];
 
-    this.setState({
-      articles: parsedData.data || [],
-      totalResults: parsedData.pagination ? parsedData.pagination.total : 0,
-      loading: false,
-    });
+      this.setState({
+        articles: articles,
+        loading: false,
+        page: 1, // reset page on new fetch
+      });
+    } catch (error) {
+      console.error("Error fetching news:", error);
+      this.setState({ loading: false });
+    }
   };
 
-  handlePrevClick = async () => {
-    await this.setState({ page: this.state.page - 1 });
-    this.fetchNews();
+  handlePrevClick = () => {
+    if (this.state.page > 1) {
+      this.setState({ page: this.state.page - 1 });
+    }
   };
 
-  handleNextClick = async () => {
-    await this.setState({ page: this.state.page + 1 });
-    this.fetchNews();
+  handleNextClick = () => {
+    const totalPages = Math.ceil(this.state.articles.length / this.props.pageSize);
+    if (this.state.page < totalPages) {
+      this.setState({ page: this.state.page + 1 });
+    }
   };
 
   render() {
+    const { articles, loading, page } = this.state;
+    const { pageSize } = this.props;
+
+    // Pagination: slice articles for current page
+    const startIndex = (page - 1) * pageSize;
+    const endIndex = startIndex + pageSize;
+    const currentArticles = articles.slice(startIndex, endIndex);
+
     return (
       <div className="container my-3">
         <h2 className="text-center" style={{ marginTop: "70px" }}>
           NewsGlider - India {this.props.category} News
         </h2>
 
-        {this.state.loading && <Spinner />}
+        {loading && <Spinner />}
 
         <div className="row">
-          {!this.state.loading &&
-            this.state.articles.map((element) => (
-              <div className="col-md-4" key={element.url}>
+          {!loading &&
+            currentArticles.map((element, index) => (
+              <div className="col-md-4" key={index}>
                 <NewsItem
                   title={element.title ? element.title.slice(0, 45) : ""}
-                  description={element.description ? element.description.slice(0, 88) : ""}
-                  imageUrl={element.image}
-                  newsUrl={element.url}
+                  description={element.content ? element.content.slice(0, 88) : ""}
+                  imageUrl={element.imageUrl || element.image}
+                  newsUrl={element.readMoreUrl || "#"}
                 />
               </div>
             ))}
         </div>
 
+        {/* Pagination buttons */}
         <div className="container d-flex justify-content-between my-3">
           <button
-            disabled={this.state.page <= 1}
+            disabled={page <= 1}
             className="btn btn-dark"
             onClick={this.handlePrevClick}
           >
@@ -102,7 +115,7 @@ export default class News extends Component {
           </button>
 
           <button
-            disabled={this.state.page * this.props.pageSize >= this.state.totalResults}
+            disabled={page * pageSize >= articles.length}
             className="btn btn-dark"
             onClick={this.handleNextClick}
           >
