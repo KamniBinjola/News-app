@@ -6,7 +6,7 @@ import PropTypes from "prop-types";
 export default class News extends Component {
   static defaultProps = {
     pageSize: 6,
-    category: "all", // default Inshorts category
+    category: "general", // default category
   };
 
   static propTypes = {
@@ -28,34 +28,36 @@ export default class News extends Component {
   }
 
   fetchNews = async () => {
-    // Map your category props to valid Inshorts categories
-    const validCategories = [
-      "all", "national", "business", "sports",
-      "world", "politics", "technology", "startup",
-      "entertainment", "miscellaneous", "hatke",
-      "science", "automobile"
-    ];
+    const apiKey = "61045db818f4677d4199b8f534b1b1f9"; // Your GNews API key
 
-    const category = validCategories.includes(this.props.category)
-      ? this.props.category
-      : "all";
+    // Map category prop to GNews topic
+    const categoryMap = {
+      general: "general",
+      business: "business",
+      entertainment: "entertainment",
+      health: "health",
+      science: "science",
+      sports: "sports",
+      technology: "technology",
+    };
+
+    const category = categoryMap[this.props.category] || "general";
+
+    const url = `https://gnews.io/api/v4/top-headlines?country=in&topic=${category}&lang=en&max=10&token=${apiKey}`;
 
     this.setState({ loading: true });
 
     try {
-      const response = await fetch(
-        `https://inshortsapi.vercel.app/news?category=${category}`
-      );
+      const response = await fetch(url);
       const parsedData = await response.json();
-      const articles = parsedData.data || [];
 
       this.setState({
-        articles: articles,
+        articles: parsedData.articles || [],
         loading: false,
-        page: 1, // reset page on new fetch
+        page: 1,
       });
-    } catch (error) {
-      console.error("Error fetching news:", error);
+    } catch (err) {
+      console.error("Error fetching GNews:", err);
       this.setState({ loading: false });
     }
   };
@@ -77,7 +79,7 @@ export default class News extends Component {
     const { articles, loading, page } = this.state;
     const { pageSize } = this.props;
 
-    // Pagination: slice articles for current page
+    // Client-side pagination
     const startIndex = (page - 1) * pageSize;
     const endIndex = startIndex + pageSize;
     const currentArticles = articles.slice(startIndex, endIndex);
@@ -96,9 +98,9 @@ export default class News extends Component {
               <div className="col-md-4" key={index}>
                 <NewsItem
                   title={element.title ? element.title.slice(0, 45) : ""}
-                  description={element.content ? element.content.slice(0, 88) : ""}
-                  imageUrl={element.imageUrl || element.image}
-                  newsUrl={element.readMoreUrl || "#"}
+                  description={element.description ? element.description.slice(0, 88) : ""}
+                  imageUrl={element.image}
+                  newsUrl={element.url}
                 />
               </div>
             ))}
