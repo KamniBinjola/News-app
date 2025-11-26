@@ -31,7 +31,7 @@ export default class News extends Component {
   }
 
   fetchNews = async () => {
-    const url = `https://newsapi.org/v2/top-headlines?country=${this.props.country}&category=${this.props.category}&apiKey=61045db818f4677d4199b8f534b1b1f9&page=${this.state.page}&pageSize=${this.props.pageSize}`;
+let url = `https://gnews.io/api/v4/top-headlines?category=${this.props.category}&lang=en&country=us&max=${this.props.pageSize}&apikey=61045db818f4677d4199b8f534b1b1f9`;
     this.setState({ loading: true });
     let data = await fetch(url);
     let parsedData = await data.json();
